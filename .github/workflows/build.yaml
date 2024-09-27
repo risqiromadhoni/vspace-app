@@ -25,15 +25,9 @@ jobs:
       - name: Setup Bun  
         uses: oven-sh/setup-bun@v2
 
-      - name: Setup Node  
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-          cache: 'npm'
-
       - name: Run Yarn Install
         run: |
-             npm i -g corepack
+             bun add -g corepack
              bun install --frozen-lockfile
 
 
