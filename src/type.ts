@@ -49,6 +49,9 @@ export type AuthPostMessagePayload = {
   data: Record<'accessToken', string>;
 }
 
+/**
+ * Post message response for authentication
+ */
 export type AuthPostMessageResponse = {
   type: 'AUTH_RESPONSE';
   /**

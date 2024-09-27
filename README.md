@@ -1,79 +1,174 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# React Native WebView Authentication Project
+![Simulation demo](./assets/Simulator-form-auth-submission.mp4 "Simulation demo submit form")
 
-# Getting Started
+## Description
+This project is a React Native application focused on establishing communication between a website and a mobile application using WebView. The primary goal is to bypass the web's authentication system, allowing the current user to access and complete a form embedded in the website.
 
->**Note**: Make sure you have completed the [React Native - Environment Setup](https://reactnative.dev/docs/environment-setup) instructions till "Creating a new application" step, before proceeding.
+**Key Features:**
+- Seamless integration of a vspace web form within a React Native mobile app via WebView.
+- Handles web authentication, enabling the user to interact with authenticated content directly.
+- Secure communication between the mobile app and the website to ensure data privacy and integrity.
 
-## Step 1: Start the Metro Server
-
-First, you will need to start **Metro**, the JavaScript _bundler_ that ships _with_ React Native.
-
-To start Metro, run the following command from the _root_ of your React Native project:
-
-```bash
-# using npm
-npm start
-
-# OR using Yarn
-yarn start
+## Flow
+```mermaid
+sequenceDiagram
+   participant MobileApp
+   participant WebView
+   participant WebClient
+   
+   MobileApp->>WebView: postMessage({ type: 'AUTH', data: { accessToken: 'your_token' } })
+   WebView->>WebClient: onMessage({ type: 'AUTH', data: { accessToken: 'your_token' } })
+   
+   WebClient->>WebClient: Check message type and data
+   alt Message type is AUTH and accessToken is valid
+      WebClient->>WebClient: Save accessToken to cookie
+      WebClient->>WebView: postMessage({ type: 'AUTH_RESPONSE', success: true, message: 'Message received successfully!' })
+      WebView->>MobileApp: postMessage({ type: 'AUTH_RESPONSE', success: true, message: 'Message received successfully!' })
+   else Invalid message or accessToken missing
+      WebClient->>WebClient: Discard message, no action
+      WebClient->>WebView: postMessage({ type: 'AUTH_RESPONSE', success: false, message: 'Invalid message format' })
+      WebView->>MobileApp: postMessage({ type: 'AUTH_RESPONSE', success: false, message: 'Invalid message format' })
+   end
 ```
 
-## Step 2: Start your Application
+## Code
+> **Important ‼️** Communication cross platform (web and mobile) is using Webview, and rule form submission is dependent on submission accessability is restricted or public, when form is restricted we need send current user jwt `accessToken` into web. Choosing [`postmessage`](https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage) API is best way because it is more secured from query url param to send access token. Based on BE information token is related to one device, using webview will solve this rules.
 
-Let Metro Bundler run in its _own_ terminal. Open a _new_ terminal from the _root_ of your React Native project. Run the following command to start your _Android_ or _iOS_ app:
+```ts
+// file: src/type.ts
+/**
+ * Post message payload for authentication
+ */
+export type AuthPostMessagePayload = {
+  type: 'AUTH';
+  /**
+   * Authentication jwt token from mmkv
+   */
+  data: Record<'accessToken', string>;
+}
 
-### For Android
-
-```bash
-# using npm
-npm run android
-
-# OR using Yarn
-yarn android
+/**
+ * Post message response for authentication
+ */
+export type AuthPostMessageResponse = {
+  type: 'AUTH_RESPONSE';
+  /**
+   * Success status of the authentication
+   */
+  success: boolean;
+  /**
+   * Error message if any
+   */
+  message: string;
+}
 ```
 
-### For iOS
+```tsx
+// src/WebViewScreen.tsx
+function WebViewScreen({ route }: WebViewScreenProps) {
+  const { submissionUrl } = route.params;
+  const webViewRef = useRef<WebView>(null);
 
-```bash
-# using npm
-npm run ios
+  const accessToken = useSpaceStore.use.accessToken();
 
-# OR using Yarn
-yarn ios
+  /**
+   * Handle the webview load event
+   * Post a message to the webview with the access token
+   */
+  const handleOnLoad = useCallback(() => {
+    if (!accessToken) {
+      return toast.error('Access token not found', {
+        position: ToastPosition.BOTTOM,
+        isSwipeable: true,
+      });
+    }
+    const message: AuthPostMessagePayload = {
+      type: 'AUTH',
+      data: { accessToken },
+    };
+    const payload = superjson.stringify(message);
+    webViewRef.current?.postMessage(payload);
+  }, [accessToken]);
+
+  /**
+   * Handle message from the webview
+   */
+  const handleMessage = (event: WebViewMessageEvent) => {
+    // Check if the message is coming from the expected origin
+    // Replace 'https://virtualspace.ai/' with your app's actual scheme
+    // if (event.origin !== "https://virtualspace.ai/") return;
+    const eventData = JSON.parse(event.nativeEvent.data) as AuthPostMessageResponse;
+    if (eventData.type !== 'AUTH_RESPONSE') {
+      return;
+    }
+    if (eventData.success) {
+      return toast.success('Authentication successful', {
+        position: ToastPosition.BOTTOM,
+        isSwipeable: true,
+      });
+    }
+    return toast.error('Authentication failed', {
+      position: ToastPosition.BOTTOM,
+      isSwipeable: true,
+    });
+  };
+
+  return (
+    <View style={styles.container}>
+      <WebView
+        ref={webViewRef}
+        source={{ uri: submissionUrl }}
+        onMessage={handleMessage}
+        onLoadEnd={handleOnLoad}
+      />
+    </View>
+  );
+}
 ```
 
-If everything is set up _correctly_, you should see your new app running in your _Android Emulator_ or _iOS Simulator_ shortly provided you have set up your emulator/simulator correctly.
+## Requirements
+```txt
+node >= 18 or bun >= 1
+react-native 0.75.3
+Xcode (for iOS development) >= 15.x
+Android Studio (for Android development) with Android SDK >= 29
+CocoaPods (for iOS dependency management) >= 1.14
+Java Development Kit (JDK) >= 11
+```
 
-This is one way to run your app — you can also run it directly from within Android Studio and Xcode respectively.
+## Structure
+```txt
+.
+├── app.json
+├── App.tsx
+├── babel.config.js
+├── bun.lockb
+├── Gemfile
+├── Gemfile.lock
+├── index.js
+├── ios
+├── jest.config.js
+├── metro.config.js
+├── node_modules
+├── package.json
+├── README.md
+├── src
+│  ├── FormSubmissionScreen.tsx
+│  ├── LoginScreen.tsx
+│  ├── services
+│  │  ├── auth.ts
+│  │  ├── axios.ts
+│  │  ├── type.ts
+│  │  └── workspace.ts
+│  ├── type.ts
+│  ├── types
+│  │  ├── user.ts
+│  │  └── workspace.ts
+│  ├── utils
+│  │  ├── schema.ts
+│  │  └── store.ts
+│  ├── WebViewScreen.tsx
+│  └── WorkspaceListScreen.tsx
+└── tsconfig.json
+```
 
-## Step 3: Modifying your App
-
-Now that you have successfully run the app, let's modify it.
-
-1. Open `App.tsx` in your text editor of choice and edit some lines.
-2. For **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Developer Menu** (<kbd>Ctrl</kbd> + <kbd>M</kbd> (on Window and Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (on macOS)) to see your changes!
-
-   For **iOS**: Hit <kbd>Cmd ⌘</kbd> + <kbd>R</kbd> in your iOS Simulator to reload the app and see your changes!
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [Introduction to React Native](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you can't get this to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.

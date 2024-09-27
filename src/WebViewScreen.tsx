@@ -1,37 +1,50 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useCallback } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { WebView, WebViewMessageEvent } from 'react-native-webview';
+import { WebView } from 'react-native-webview';
+import type { WebViewMessageEvent } from 'react-native-webview';
 import type { AuthPostMessagePayload, AuthPostMessageResponse, WebViewScreenProps } from './type';
 import { toast, ToastPosition } from '@backpackapp-io/react-native-toast';
 import { useSpaceStore } from './utils/store';
 import superjson from 'superjson';
 
-export default function WebViewScreen({ route }: WebViewScreenProps) {
+function WebViewScreen({ route }: WebViewScreenProps) {
   const { submissionUrl } = route.params;
   const webViewRef = useRef<WebView>(null);
 
   const accessToken = useSpaceStore.use.accessToken();
 
-  useEffect(() => {
-    if (accessToken) {
-      const timer = setTimeout(() => {
-        const message: AuthPostMessagePayload = {
-          type: 'AUTH',
-          data: { accessToken },
-        };
-        webViewRef.current?.postMessage(superjson.stringify(message));
-      }, 2000);
-      return () => clearTimeout(timer);
+  /**
+   * Handle the webview load event
+   * Post a message to the webview with the access token
+   */
+  const handleOnLoad = useCallback(() => {
+    if (!accessToken) {
+      return toast.error('Access token not found', {
+        position: ToastPosition.BOTTOM,
+        isSwipeable: true,
+      });
     }
+    const message: AuthPostMessagePayload = {
+      type: 'AUTH',
+      data: { accessToken },
+    };
+    const payload = superjson.stringify(message);
+    webViewRef.current?.postMessage(payload);
   }, [accessToken]);
 
+  /**
+   * Handle message from the webview
+   */
   const handleMessage = (event: WebViewMessageEvent) => {
+    // Check if the message is coming from the expected origin
+    // Replace 'https://virtualspace.ai/' with your app's actual scheme
+    // if (event.origin !== "https://virtualspace.ai/") return;
     const eventData = JSON.parse(event.nativeEvent.data) as AuthPostMessageResponse;
     if (eventData.type !== 'AUTH_RESPONSE') {
       return;
     }
     if (eventData.success) {
-      return toast.success('Authentication successful', { 
+      return toast.success('Authentication successful', {
         position: ToastPosition.BOTTOM,
         isSwipeable: true,
       });
@@ -48,6 +61,7 @@ export default function WebViewScreen({ route }: WebViewScreenProps) {
         ref={webViewRef}
         source={{ uri: submissionUrl }}
         onMessage={handleMessage}
+        onLoadEnd={handleOnLoad}
       />
     </View>
   );
@@ -58,3 +72,5 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 });
+
+export default WebViewScreen;

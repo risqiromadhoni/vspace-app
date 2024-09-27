@@ -1,11 +1,16 @@
 {
   "name": "vspace-app",
+  "description": "An replicate to implement shared token beetwen form module and vspcae mobile app",
   "version": "0.0.1",
   "private": true,
   "author": {
     "name": "Risqi Romadhoni",
     "email": "risqi.romadhoni96@gmail.com",
     "url": "https://www.heyris.me"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+github.com:risqiromadhoni/vspace-app.git"
   },
   "scripts": {
     "android": "react-native run-android",
