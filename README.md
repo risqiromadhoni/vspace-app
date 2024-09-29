@@ -1,5 +1,6 @@
 # React Native WebView Authentication Project
-![Simulation demo](./assets/Simulator-form-auth-submission.mp4 "Simulation demo submit form")
+
+[![Demo Video](https://github.com/user-attachments/assets/6805395d-5fc7-49be-9954-da711897a814)](https://github.com/user-attachments/assets/6805395d-5fc7-49be-9954-da711897a814)
 
 ## Description
 This project is a React Native application focused on establishing communication between a website and a mobile application using WebView. The primary goal is to bypass the web's authentication system, allowing the current user to access and complete a form embedded in the website.
@@ -171,4 +172,3 @@ Java Development Kit (JDK) >= 11
 │  └── WorkspaceListScreen.tsx
 └── tsconfig.json
 ```
-

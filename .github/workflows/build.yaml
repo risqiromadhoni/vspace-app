@@ -25,7 +25,7 @@ jobs:
       - name: Setup Bun  
         uses: oven-sh/setup-bun@v2
 
-      - name: Run Yarn Install
+      - name: Install dependencies
         run: |
              bun add -g corepack
              bun install --frozen-lockfile

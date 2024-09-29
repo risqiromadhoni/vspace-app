@@ -10,6 +10,7 @@ import { toast } from '@backpackapp-io/react-native-toast';
 
 function WorkspaceListScreen({ navigation }: WorkspaceListScreenProps) {
   const workspaces = useSpaceStore.use.workspaces();
+  const setSelectedWorkspace = useSpaceStore.use.setSelectedWorkspace();
 
   const handleOnLogout = async (e: GestureResponderEvent) => {
     e.preventDefault();
@@ -20,7 +21,8 @@ function WorkspaceListScreen({ navigation }: WorkspaceListScreenProps) {
   const handleWorkspaceSelect = async (e: GestureResponderEvent, workspace: Organization) => {
     e.preventDefault();
     try {
-      await workspaceService.postSelectWorkspace(workspace.id);
+      const resSelectWorkspace = await workspaceService.postSelectWorkspace(workspace.id);
+      setSelectedWorkspace(resSelectWorkspace);
       return navigation.navigate('FormSubmission');
     } catch (error) {
       console.error('Failed to select workspace:', error);

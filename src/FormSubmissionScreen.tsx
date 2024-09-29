@@ -3,28 +3,29 @@ import { View, TextInput, Button, StyleSheet, GestureResponderEvent, Text } from
 import type { FormSubmissionProps } from './type';
 import { toast } from '@backpackapp-io/react-native-toast';
 import { useSpaceStore } from './utils/store';
+import { safeParse } from 'valibot';
+import { spaceUrlSchema } from './utils/schema';
 
 function FormSubmissionScreen({ navigation }: FormSubmissionProps) {
   const [submissionUrl, setSubmissionUrl] = useState('');
 
   const user = useSpaceStore.use.user();
-  const selectedWorkspaceId = useSpaceStore.use.selectedWorkspace();
-  const workspace = useSpaceStore.use.workspaces()
-    .find((w) => w.id === selectedWorkspaceId);
+  const selectedWorkspace = useSpaceStore.use.selectedWorkspace();
 
   const handleSubmitForm = (e: GestureResponderEvent) => {
     e.preventDefault();
-    if (submissionUrl) {
+    const submissionUrlParsed = safeParse(spaceUrlSchema, submissionUrl);
+    if (submissionUrlParsed.success) {
       return navigation.navigate('WebView', {
-        submissionUrl,
+        submissionUrl: submissionUrl,
       });
     }
-    return toast.error('Please enter a valid URL');
+    return toast.error(submissionUrlParsed.issues.map((issue) => issue.message).join('\n'));
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.workspace}>Workspace: {workspace?.name}</Text>
+      <Text style={styles.workspace}>Workspace: {selectedWorkspace?.data?.data?.attributes?.name}</Text>
       <Text style={styles.info}>
         Signed as: {user?.email}
       </Text>
@@ -32,6 +33,7 @@ function FormSubmissionScreen({ navigation }: FormSubmissionProps) {
         Copy and paste the form submission URL from the chat message.
       </Text>
       <TextInput
+        multiline
         style={styles.input}
         placeholder="Form Submission URL"
         value={submissionUrl}
@@ -51,7 +53,8 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   input: {
-    height: 40,
+    height: 80,
+    textAlignVertical: 'top',
     borderColor: 'gray',
     borderWidth: 1,
     marginBottom: 12,

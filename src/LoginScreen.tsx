@@ -18,7 +18,6 @@ function LoginScreen({ navigation }: LoginScreenProps) {
 
   const handleLogin = async (e: GestureResponderEvent) => {
     e.preventDefault();
-    const tId = toast.loading('Logging in...');
     const validateLogin = safeParse(loginFormSchema, { email, password });
     if (!validateLogin.success) {
       setIsProcess(false);
@@ -28,14 +27,13 @@ function LoginScreen({ navigation }: LoginScreenProps) {
     try {
       await authService.login(email, password);
       await workspaceService.getWorkSpaces();
-      return navigation.navigate('WorkspaceList');
+      navigation.navigate('WorkspaceList');
     } catch (error) {
       console.error('Login failed:', error);
       resetStore();
-      return toast.error('Login failed. Please try again.');
+      toast.error('Login failed. Please try again.');
     } finally {
       setIsProcess(false);
-      toast.dismiss(tId);
     }
   };
 
@@ -58,7 +56,7 @@ function LoginScreen({ navigation }: LoginScreenProps) {
         onChangeText={setPassword}
         secureTextEntry
       />
-      <Button title="Login" onPress={handleLogin} disabled={isProcess} />
+      <Button title={isProcess ? 'Logging in...' : 'Login'} onPress={handleLogin} disabled={isProcess} />
     </View>
   );
 }

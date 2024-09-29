@@ -1,6 +1,6 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { UserType } from './types/user';
-import type { Organization } from './types/workspace';
+import type { Organization, PostSelectWorkspaceResponse } from './types/workspace';
 
 export type RootStackParamList = {
   Login: undefined;
@@ -22,7 +22,7 @@ export type WithSelectors<S> = S extends { getState: () => infer T }
 
 export interface SpaceStateType {
   workspaces: Organization[];
-  selectedWorkspace: Organization['id'] | null;
+  selectedWorkspace: PostSelectWorkspaceResponse | null;
   user: UserType | null;
   accessToken: string | null;
   refreshToken: string | null;
@@ -42,18 +42,21 @@ export type SpaceStoreType = SpaceStateType & SpaceActionsType;
  * Post message payload for authentication
  */
 export type AuthPostMessagePayload = {
-  type: 'AUTH';
+  type: 'VSPACE_AUTH';
   /**
    * Authentication jwt token from mmkv
    */
-  data: Record<'accessToken', string>;
+  data: {
+    accessToken: string;
+    selectedWorkspace: PostSelectWorkspaceResponse;
+  };
 }
 
 /**
  * Post message response for authentication
  */
 export type AuthPostMessageResponse = {
-  type: 'AUTH_RESPONSE';
+  type: 'VSPACE_AUTH_RESPONSE';
   /**
    * Success status of the authentication
    */

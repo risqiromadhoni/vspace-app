@@ -1,4 +1,4 @@
-import { WorkspacesResponseType } from '../types/workspace';
+import { PostSelectWorkspaceResponse, WorkspacesResponseType } from '../types/workspace';
 import { useSpaceStore } from '../utils/store';
 import axios from './axios';
 
@@ -17,10 +17,13 @@ class WorkspaceService {
   }
   async postSelectWorkspace(workspaceId: string) {
     try {
-      const { setSelectedWorkspace } = useSpaceStore.getState();
-      const res = await axios.post(`/api/v1/organizations/${workspaceId}/select`);
-      setSelectedWorkspace(workspaceId);
-      return res.data;
+      const res: any = await axios.post(`/api/v1/organizations/${workspaceId}/select`);
+      return {
+        data: res.data,
+        onesignal: res?.onesignal,
+        pubnub: res.pubnub,
+        ['web-chat-version']: res['web-chat-version'],
+      } as PostSelectWorkspaceResponse;
     } catch (error) {
       throw error;
     }
